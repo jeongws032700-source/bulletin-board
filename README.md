@@ -3,7 +3,7 @@
 ## 1. 프로젝트 개요
 
 - **수행 주제:** JWT 인증 기반의 커뮤니티 게시판 — 회원가입/로그인 후 게시글 CRUD, 댓글, 좋아요, 카테고리/검색/정렬 구현
-- **배포 주소:** https://ministry-highest-goal-belt.trycloudflare.com
+- **배포 주소:** https://squeeze-cubbyhole-antelope.ngrok-free.dev
 - **사용 기술:** HTML, CSS, Tailwind CSS, Vanilla JS, Node.js (Express), MariaDB, JWT, GCP, Cloudflare
 
 ---
@@ -136,7 +136,15 @@ cloudflared tunnel --url http://localhost:3000
 
 ## 5. 트러블슈팅 (문제 해결 기록)
 
-**사례 1: DB 생성 권한 오류**
+**사례 1: Cloudflare 도메인 없이 HTTPS 고정 URL 확보**
+
+`cloudflared` 임시 터널은 재시작 시 URL이 매번 변경되는 문제가 있었습니다. Cloudflare named tunnel은 도메인 구매가 필요해 무료로 고정 URL을 확보하기 위해 ngrok으로 전환했습니다. ngrok 무료 플랜에서 제공하는 static domain(`ngrok-free.dev`)을 활용해 PM2와 함께 영구 실행 환경을 구성했습니다.
+
+```bash
+pm2 start "ngrok http --domain=squeeze-cubbyhole-antelope.ngrok-free.dev 3000" --name tunnel
+```
+
+**사례 2: DB 생성 권한 오류**
 
 `init.sql` 실행 시 아래 에러 발생:
 ```
