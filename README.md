@@ -4,7 +4,7 @@
 
 - **수행 주제:** JWT 인증 기반의 커뮤니티 게시판 — 회원가입/로그인 후 게시글 CRUD, 댓글, 좋아요, 카테고리/검색/정렬 구현
 - **배포 주소:** https://squeeze-cubbyhole-antelope.ngrok-free.dev
-- **사용 기술:** HTML, CSS, Tailwind CSS, Vanilla JS, Node.js (Express), MariaDB, JWT, GCP, Cloudflare
+- **사용 기술:** HTML, CSS, Tailwind CSS, Vanilla JS, Node.js (Express), MariaDB, JWT, GCP, ngrok
 
 ---
 
