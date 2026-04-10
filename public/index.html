@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>커뮤니티</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>* { font-family: 'Inter', sans-serif; }</style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+  <!-- 헤더 -->
+  <header class="bg-white border-b border-gray-200 sticky top-0 z-10">
+    <div class="max-w-6xl mx-auto px-6 py-3 flex items-center gap-4">
+      <h1 class="text-xl font-bold text-gray-900 shrink-0">커뮤니티</h1>
+      <div class="flex-1 relative">
+        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">🔍</span>
+        <input id="searchInput" type="text" placeholder="검색어를 입력하세요"
+          class="w-full bg-gray-100 border-0 rounded-full pl-9 pr-4 py-2 text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300 transition" />
+      </div>
+      <div id="authArea" class="flex items-center gap-3 text-sm shrink-0"></div>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-6 py-6 flex gap-6">
+
+    <!-- 왼쪽: 게시글 목록 -->
+    <div class="flex-1 min-w-0">
+      <!-- 정렬 + 글 수 -->
+      <div class="flex items-center justify-between mb-4">
+        <p id="totalCount" class="text-sm text-gray-500">전체 0개</p>
+        <div class="flex gap-1">
+          <button onclick="setSort('latest')" data-sort="latest"
+            class="sort-btn bg-gray-900 text-white text-sm px-4 py-1.5 rounded-full font-medium transition">최신순</button>
+          <button onclick="setSort('views')" data-sort="views"
+            class="sort-btn text-gray-500 hover:bg-gray-100 text-sm px-4 py-1.5 rounded-full font-medium transition">조회순</button>
+          <button onclick="setSort('likes')" data-sort="likes"
+            class="sort-btn text-gray-500 hover:bg-gray-100 text-sm px-4 py-1.5 rounded-full font-medium transition">추천순</button>
+        </div>
+      </div>
+
+      <!-- 게시글 카드 목록 -->
+      <div id="postList" class="space-y-3"></div>
+      <div id="emptyMsg" class="hidden text-center text-gray-400 py-20 text-sm">
+        <p class="text-3xl mb-3">📭</p>
+        게시글이 없습니다.
+      </div>
+    </div>
+
+    <!-- 오른쪽: 사이드바 -->
+    <aside class="w-64 shrink-0 space-y-4">
+
+      <!-- 커뮤니티 통계 -->
+      <div class="bg-gray-900 text-white rounded-2xl p-5">
+        <h3 class="font-semibold text-sm mb-4">커뮤니티 통계</h3>
+        <div class="space-y-3">
+          <div class="flex justify-between items-center text-sm">
+            <span class="text-gray-400 flex items-center gap-1.5">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+              전체 게시글
+            </span>
+            <span id="statTotal" class="font-bold">-</span>
+          </div>
+          <div class="flex justify-between items-center text-sm">
+            <span class="text-gray-400 flex items-center gap-1.5">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+              총 조회수
+            </span>
+            <span id="statViews" class="font-bold">-</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 카테고리 -->
+      <div class="bg-white rounded-2xl p-5 border border-gray-100">
+        <h3 class="font-semibold text-sm text-gray-800 mb-3">카테고리</h3>
+        <div class="space-y-1">
+          <button onclick="setCategory('전체')" data-cat="전체"
+            class="cat-btn w-full text-left px-3 py-2 rounded-xl text-sm font-semibold bg-gray-900 text-white transition">전체</button>
+          <button onclick="setCategory('공지사항')" data-cat="공지사항"
+            class="cat-btn w-full text-left px-3 py-2 rounded-xl text-sm text-gray-600 hover:bg-gray-50 transition">공지사항</button>
+          <button onclick="setCategory('자유게시판')" data-cat="자유게시판"
+            class="cat-btn w-full text-left px-3 py-2 rounded-xl text-sm text-gray-600 hover:bg-gray-50 transition">자유게시판</button>
+          <button onclick="setCategory('질문답변')" data-cat="질문답변"
+            class="cat-btn w-full text-left px-3 py-2 rounded-xl text-sm text-gray-600 hover:bg-gray-50 transition">질문답변</button>
+          <button onclick="setCategory('정보공유')" data-cat="정보공유"
+            class="cat-btn w-full text-left px-3 py-2 rounded-xl text-sm text-gray-600 hover:bg-gray-50 transition">정보공유</button>
+          <button onclick="setCategory('이벤트')" data-cat="이벤트"
+            class="cat-btn w-full text-left px-3 py-2 rounded-xl text-sm text-gray-600 hover:bg-gray-50 transition">이벤트</button>
+        </div>
+      </div>
+
+      <!-- 인기 게시글 -->
+      <div class="bg-white rounded-2xl p-5 border border-gray-100">
+        <h3 class="font-semibold text-sm text-gray-800 mb-3">🔥 인기 게시글</h3>
+        <div id="trendingList" class="space-y-3"></div>
+      </div>
+
+    </aside>
+  </main>
+
+  <script>
+    const token    = localStorage.getItem('token');
+    const nickname = localStorage.getItem('nickname');
+    const authArea = document.getElementById('authArea');
+    let currentCategory = '전체';
+    let currentSort     = 'latest';
+    let searchTimer     = null;
+
+    if (token) {
+      authArea.innerHTML = `
+        <span class="text-gray-600"><strong class="text-gray-900">${nickname}</strong>님</span>
+        <button onclick="logout()" class="text-gray-400 hover:text-red-500 transition text-xs">로그아웃</button>
+        ${localStorage.getItem('role') === 'admin' ? `<a href="/admin.html" class="text-xs text-purple-500 hover:text-purple-700 border border-purple-200 px-3 py-1.5 rounded-full transition">관리자</a>` : ''}
+        <a href="/write.html" class="bg-gray-900 hover:bg-gray-700 text-white text-sm font-semibold px-4 py-2 rounded-full transition">글쓰기</a>
+      `;
+    } else {
+      authArea.innerHTML = `
+        <a href="/login.html" class="text-gray-600 hover:text-gray-900 transition">로그인</a>
+        <a href="/signup.html" class="bg-gray-900 hover:bg-gray-700 text-white text-sm font-semibold px-4 py-2 rounded-full transition">회원가입</a>
+      `;
+    }
+
+    function logout() {
+      localStorage.removeItem('token');
+      localStorage.removeItem('nickname');
+      window.location.reload();
+    }
+
+    function setCategory(cat) {
+      currentCategory = cat;
+      document.querySelectorAll('.cat-btn').forEach(btn => {
+        const active = btn.dataset.cat === cat;
+        btn.className = `cat-btn w-full text-left px-3 py-2 rounded-xl text-sm transition ${
+          active ? 'font-semibold bg-gray-900 text-white' : 'text-gray-600 hover:bg-gray-50'
+        }`;
+      });
+      loadPosts();
+    }
+
+    function setSort(sort) {
+      currentSort = sort;
+      document.querySelectorAll('.sort-btn').forEach(btn => {
+        const active = btn.dataset.sort === sort;
+        btn.className = `sort-btn text-sm px-4 py-1.5 rounded-full font-medium transition ${
+          active ? 'bg-gray-900 text-white' : 'text-gray-500 hover:bg-gray-100'
+        }`;
+      });
+      loadPosts();
+    }
+
+    document.getElementById('searchInput').addEventListener('input', () => {
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(loadPosts, 350);
+    });
+
+    function formatDate(dateStr) {
+      const d = new Date(dateStr), now = new Date();
+      const diff = Math.floor((now - d) / 1000);
+      if (diff < 60) return '방금 전';
+      if (diff < 3600) return `${Math.floor(diff/60)}분 전`;
+      if (diff < 86400) return `${Math.floor(diff/3600)}시간 전`;
+      return `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')}`;
+    }
+
+    function escHtml(str) {
+      return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    const catColors = {
+      '공지사항' : 'bg-blue-50 text-blue-600',
+      '자유게시판': 'bg-indigo-50 text-indigo-600',
+      '질문답변' : 'bg-yellow-50 text-yellow-600',
+      '정보공유' : 'bg-green-50 text-green-600',
+      '이벤트'  : 'bg-pink-50 text-pink-600',
+    };
+
+    const avatars = ['🐶','🐱','🦊','🐻','🐼','🐨','🦁','🐯','🐸','🐙'];
+    function getAvatar(name) {
+      let h = 0;
+      for (const c of name) h = (h * 31 + c.charCodeAt(0)) & 0xffff;
+      return avatars[h % avatars.length];
+    }
+
+    async function loadStats() {
+      const res  = await fetch('/api/stats');
+      const data = await res.json();
+      document.getElementById('statTotal').textContent = data.total.toLocaleString();
+      document.getElementById('statViews').textContent = Number(data.views).toLocaleString();
+    }
+
+    async function loadTrending() {
+      const res   = await fetch('/api/posts/trending');
+      const posts = await res.json();
+      const rankColors = ['text-yellow-500', 'text-gray-400', 'text-orange-400'];
+      document.getElementById('trendingList').innerHTML = posts.map((p, i) => `
+        <a href="/detail.html?id=${p.id}" class="flex items-start gap-3 group">
+          <span class="text-sm font-bold ${rankColors[i] || 'text-gray-300'} w-4 shrink-0">${i+1}</span>
+          <div class="min-w-0">
+            <p class="text-sm text-gray-700 group-hover:text-gray-900 truncate transition leading-snug">${escHtml(p.title)}</p>
+            <p class="text-xs text-gray-400 mt-0.5">${escHtml(p.author_name)} · 👁 ${p.views}</p>
+          </div>
+        </a>
+      `).join('');
+    }
+
+    async function loadPosts() {
+      const search = document.getElementById('searchInput').value.trim();
+      const params = new URLSearchParams({ sort: currentSort });
+      if (currentCategory !== '전체') params.append('category', currentCategory);
+      if (search) params.append('search', search);
+
+      const res   = await fetch(`/api/posts?${params}`);
+      const posts = await res.json();
+      const list  = document.getElementById('postList');
+      const empty = document.getElementById('emptyMsg');
+
+      document.getElementById('totalCount').textContent = `전체 ${posts.length}개`;
+
+      if (posts.length === 0) {
+        list.innerHTML = '';
+        empty.classList.remove('hidden');
+        return;
+      }
+      empty.classList.add('hidden');
+
+      list.innerHTML = posts.map(p => {
+        const catColor = catColors[p.category] || 'bg-gray-100 text-gray-600';
+        return `
+        <a href="/detail.html?id=${p.id}"
+          class="block bg-white rounded-2xl border border-gray-100 px-5 py-4 hover:shadow-md hover:border-gray-200 transition cursor-pointer">
+          <div class="flex gap-4">
+            <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-xl shrink-0">${getAvatar(p.author_name)}</div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-start justify-between gap-2">
+                <h2 class="font-semibold text-gray-900 truncate">${escHtml(p.title)}</h2>
+                <span class="text-xs px-2 py-0.5 rounded-full shrink-0 ${catColor}">${escHtml(p.category)}</span>
+              </div>
+              <div class="flex items-center gap-2 mt-1.5 text-xs text-gray-400">
+                <span class="font-medium text-gray-600">${escHtml(p.author_name)}</span>
+                <span>·</span>
+                <span>${formatDate(p.created_at)}</span>
+                <span class="ml-auto flex items-center gap-3">
+                  <span>👁 ${p.views ?? 0}</span>
+                  <span>🤍 ${p.likes ?? 0}</span>
+                  <span>💬 ${p.comments ?? 0}</span>
+                </span>
+              </div>
+            </div>
+          </div>
+        </a>`;
+      }).join('');
+    }
+
+    loadStats();
+    loadTrending();
+    loadPosts();
+
+    window.addEventListener('pageshow', (e) => {
+      if (e.persisted) { loadPosts(); loadStats(); loadTrending(); }
+    });
+  </script>
+</body>
+</html>

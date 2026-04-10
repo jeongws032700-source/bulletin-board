@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>게시글 - 커뮤니티</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>* { font-family: 'Inter', sans-serif; }</style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+  <header class="bg-white border-b border-gray-200 sticky top-0 z-10">
+    <div class="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between">
+      <a href="/" class="text-xl font-bold text-gray-900">커뮤니티</a>
+      <div id="authArea" class="flex items-center gap-3 text-sm"></div>
+    </div>
+  </header>
+
+  <main class="max-w-3xl mx-auto px-6 py-8">
+    <a href="/" class="inline-flex items-center gap-1 text-sm text-gray-400 hover:text-gray-700 transition mb-6">← 목록으로</a>
+    <div id="postDetail" class="bg-white rounded-2xl border border-gray-100 p-8">
+      <p class="text-gray-400 text-sm">불러오는 중...</p>
+    </div>
+
+    <!-- 좋아요 버튼 -->
+    <div id="likeArea" class="hidden mt-4 flex justify-center">
+      <button id="likeBtn" onclick="toggleLike()"
+        class="flex items-center gap-2 border border-gray-200 hover:border-red-300 hover:bg-red-50 px-6 py-2.5 rounded-full text-sm font-medium transition">
+        <span id="likeIcon">🤍</span>
+        <span id="likeCount">0</span>
+      </button>
+    </div>
+
+    <!-- 댓글 섹션 -->
+    <div class="mt-6 bg-white rounded-2xl border border-gray-100 p-8">
+      <h3 id="commentTitle" class="font-semibold text-gray-900 mb-5">댓글 0개</h3>
+
+      <!-- 댓글 작성 -->
+      <div id="commentForm" class="hidden mb-6">
+        <div class="flex gap-3">
+          <div id="myAvatar" class="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center text-lg shrink-0"></div>
+          <div class="flex-1">
+            <textarea id="commentInput" rows="2" placeholder="댓글을 입력하세요"
+              class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 transition resize-none"></textarea>
+            <div class="flex justify-end mt-2">
+              <button onclick="submitComment()"
+                class="bg-gray-900 hover:bg-gray-700 text-white text-sm font-semibold px-4 py-2 rounded-xl transition">
+                등록
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div id="loginPrompt" class="hidden text-sm text-gray-400 mb-6">
+        <a href="/login.html" class="text-gray-900 font-semibold hover:underline">로그인</a>하면 댓글을 작성할 수 있습니다.
+      </div>
+
+      <!-- 댓글 목록 -->
+      <div id="commentList" class="space-y-4"></div>
+      <div id="noComment" class="text-sm text-gray-400 text-center py-6">첫 댓글을 남겨보세요!</div>
+    </div>
+  </main>
+
+  <script>
+    const token    = localStorage.getItem('token');
+    const nickname = localStorage.getItem('nickname');
+    const authArea = document.getElementById('authArea');
+    const catColors = {
+      '공지사항' : 'bg-blue-50 text-blue-600',
+      '자유게시판': 'bg-indigo-50 text-indigo-600',
+      '질문답변' : 'bg-yellow-50 text-yellow-600',
+      '정보공유' : 'bg-green-50 text-green-600',
+      '이벤트'  : 'bg-pink-50 text-pink-600',
+    };
+
+    if (token) {
+      authArea.innerHTML = `
+        <span class="text-gray-600"><strong>${nickname}</strong>님</span>
+        <button onclick="logout()" class="text-gray-400 hover:text-red-500 transition text-xs">로그아웃</button>
+      `;
+    } else {
+      authArea.innerHTML = `<a href="/login.html" class="text-gray-700 hover:text-gray-900 font-medium transition">로그인</a>`;
+    }
+
+    function logout() { localStorage.removeItem('token'); localStorage.removeItem('nickname'); window.location.href = '/'; }
+    function escHtml(str) { return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+    function formatDate(dateStr) {
+      const d = new Date(dateStr);
+      return `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+    }
+
+    const avatars = ['🐶','🐱','🦊','🐻','🐼','🐨','🦁','🐯','🐸','🐙'];
+    function getAvatar(name) {
+      let h = 0;
+      for (const c of name) h = (h * 31 + c.charCodeAt(0)) & 0xffff;
+      return avatars[h % avatars.length];
+    }
+
+    const params = new URLSearchParams(location.search);
+    const postId = params.get('id');
+
+    async function loadPost() {
+      if (!postId) { window.location.href = '/'; return; }
+      const res  = await fetch(`/api/posts/${postId}`);
+      if (!res.ok) { window.location.href = '/'; return; }
+      const post = await res.json();
+
+      let myId = null;
+      if (token) {
+        const meRes = await fetch('/api/me', { headers: { Authorization: `Bearer ${token}` } });
+        if (meRes.ok) { const me = await meRes.json(); myId = me.id; }
+      }
+      const isOwner = myId !== null && myId === post.author_id;
+      const catColor = catColors[post.category] || 'bg-gray-100 text-gray-600';
+
+      document.title = `${post.title} - 커뮤니티`;
+      document.getElementById('postDetail').innerHTML = `
+        <div class="mb-6">
+          <div class="flex items-center gap-2 mb-3">
+            <span class="text-xs px-2.5 py-1 rounded-full ${catColor}">${escHtml(post.category || '자유게시판')}</span>
+          </div>
+          <h1 class="text-2xl font-bold text-gray-900 mb-4 leading-snug">${escHtml(post.title)}</h1>
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center text-lg">${getAvatar(post.author_name)}</div>
+            <div>
+              <p class="text-sm font-medium text-gray-800">${escHtml(post.author_name)}</p>
+              <p class="text-xs text-gray-400">${formatDate(post.created_at)} · 👁 ${post.views ?? 0}</p>
+            </div>
+            ${isOwner ? `
+            <div class="ml-auto flex gap-2">
+              <a href="/edit.html?id=${post.id}" class="text-sm text-gray-500 hover:text-gray-900 border border-gray-200 px-3 py-1.5 rounded-lg transition">수정</a>
+              <button onclick="deletePost(${post.id})" class="text-sm text-red-400 hover:text-red-600 border border-red-100 hover:border-red-200 px-3 py-1.5 rounded-lg transition">삭제</button>
+            </div>` : ''}
+          </div>
+        </div>
+        <div class="border-t border-gray-100 pt-6">
+          <div class="text-gray-700 leading-8 whitespace-pre-wrap">${escHtml(post.content)}</div>
+        </div>
+      `;
+    }
+
+    async function loadLike() {
+      document.getElementById('likeArea').classList.remove('hidden');
+      if (!token) return;
+      const res  = await fetch(`/api/posts/${postId}/like`, { headers: { Authorization: `Bearer ${token}` } });
+      if (!res.ok) return;
+      const data = await res.json();
+      document.getElementById('likeCount').textContent = data.count;
+      if (data.liked) {
+        document.getElementById('likeIcon').textContent = '❤️';
+        document.getElementById('likeBtn').classList.add('border-red-300', 'bg-red-50');
+      }
+    }
+
+    async function toggleLike() {
+      if (!token) { window.location.href = '/login.html'; return; }
+      const res  = await fetch(`/api/posts/${postId}/like`, {
+        method: 'POST', headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      document.getElementById('likeIcon').textContent = data.liked ? '❤️' : '🤍';
+      const btn = document.getElementById('likeBtn');
+      btn.classList.toggle('border-red-300', data.liked);
+      btn.classList.toggle('bg-red-50', data.liked);
+      const countEl = document.getElementById('likeCount');
+      countEl.textContent = parseInt(countEl.textContent) + (data.liked ? 1 : -1);
+    }
+
+    function formatDateShort(dateStr) {
+      const d = new Date(dateStr), now = new Date();
+      const diff = Math.floor((now - d) / 1000);
+      if (diff < 60) return '방금 전';
+      if (diff < 3600) return `${Math.floor(diff/60)}분 전`;
+      if (diff < 86400) return `${Math.floor(diff/3600)}시간 전`;
+      return `${d.getMonth()+1}.${d.getDate()}`;
+    }
+
+    async function loadComments() {
+      const res      = await fetch(`/api/posts/${postId}/comments`);
+      const comments = await res.json();
+      const list     = document.getElementById('commentList');
+      const noComment = document.getElementById('noComment');
+
+      document.getElementById('commentTitle').textContent = `댓글 ${comments.length}개`;
+
+      if (comments.length === 0) { noComment.classList.remove('hidden'); return; }
+      noComment.classList.add('hidden');
+
+      list.innerHTML = comments.map(c => `
+        <div class="flex gap-3" id="comment-${c.id}">
+          <div class="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center text-lg shrink-0">${getAvatar(c.author_name)}</div>
+          <div class="flex-1">
+            <div class="flex items-center gap-2">
+              <span class="text-sm font-semibold text-gray-800">${escHtml(c.author_name)}</span>
+              <span class="text-xs text-gray-400">${formatDateShort(c.created_at)}</span>
+              ${token && nickname === c.author_name ? `
+              <button onclick="deleteComment(${c.id})" class="ml-auto text-xs text-gray-400 hover:text-red-500 transition">삭제</button>` : ''}
+            </div>
+            <p class="text-sm text-gray-700 mt-1 leading-relaxed">${escHtml(c.content)}</p>
+          </div>
+        </div>
+      `).join('<hr class="border-gray-100">');
+    }
+
+    async function submitComment() {
+      const input   = document.getElementById('commentInput');
+      const content = input.value.trim();
+      if (!content) return;
+      const res  = await fetch(`/api/posts/${postId}/comments`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ content }),
+      });
+      if (res.ok) { input.value = ''; loadComments(); }
+    }
+
+    async function deleteComment(id) {
+      if (!confirm('댓글을 삭제하시겠습니까?')) return;
+      const res = await fetch(`/api/comments/${id}`, {
+        method: 'DELETE', headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) loadComments();
+    }
+
+    async function deletePost(id) {
+      if (!confirm('정말 삭제하시겠습니까?')) return;
+      const res  = await fetch(`/api/posts/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
+      const data = await res.json();
+      if (res.ok) { window.location.href = '/'; }
+      else alert(data.message);
+    }
+
+    loadPost();
+    if (token) {
+      document.getElementById('commentForm').classList.remove('hidden');
+      document.getElementById('myAvatar').textContent = getAvatar(nickname);
+    } else {
+      document.getElementById('loginPrompt').classList.remove('hidden');
+    }
+    loadLike();
+    loadComments();
+  </script>
+</body>
+</html>
