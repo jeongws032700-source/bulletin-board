@@ -127,12 +127,14 @@ pm2 start server.js
 pm2 save
 ```
 
-**도메인 연결 (Cloudflare)**
-- `cloudflared`를 사용해 GCP VM의 로컬 3000번 포트를 외부에 노출
-- 별도의 Nginx 설정 없이 HTTPS 터널을 통해 보안 접속 구현
+**도메인 연결 (ngrok)**
+- `cloudflared` 임시 터널은 재시작 시 URL이 변경되는 문제로 ngrok static domain으로 전환
+- ngrok 무료 플랜의 고정 도메인을 활용해 HTTPS 보안 접속 구현
+- PM2로 서버와 ngrok 터널을 함께 관리하여 VM 재부팅 시 자동 복구
 
 ```bash
-cloudflared tunnel --url http://localhost:3000
+pm2 start "ngrok http --domain=squeeze-cubbyhole-antelope.ngrok-free.dev 3000" --name tunnel
+pm2 save && pm2 startup
 ```
 
 ---
@@ -161,7 +163,7 @@ GRANT ALL PRIVILEGES ON bulletin_db.* TO 'testuser'@'localhost';
 FLUSH PRIVILEGES;
 ```
 
-**사례 2: `/api/posts/trending` 라우트 충돌**
+**사례 3: `/api/posts/trending` 라우트 충돌**
 
 `GET /api/posts/:id`보다 `GET /api/posts/trending`을 먼저 등록하지 않으면 Express가 `trending`을 `:id` 파라미터로 인식해 DB에서 id=`trending`을 조회하는 문제가 발생했습니다.  
 라우트 선언 순서를 `trending` → `:id` 순으로 변경하여 해결했습니다.
@@ -171,7 +173,7 @@ app.get('/api/posts/trending', ...); // 반드시 먼저 선언
 app.get('/api/posts/:id', ...);
 ```
 
-**사례 3: 서버 재시작 시 포트 충돌**
+**사례 4: 서버 재시작 시 포트 충돌**
 
 ```
 Error: listen EADDRINUSE: address already in use :::3000
