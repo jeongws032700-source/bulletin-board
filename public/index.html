@@ -12,18 +12,31 @@
 
   <!-- 헤더 -->
   <header class="bg-white border-b border-gray-200 sticky top-0 z-10">
-    <div class="max-w-6xl mx-auto px-6 py-3 flex items-center gap-4">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center gap-3">
       <h1 class="text-xl font-bold text-gray-900 shrink-0">커뮤니티</h1>
       <div class="flex-1 relative">
-        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">🔍</span>
+        <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"/>
+        </svg>
         <input id="searchInput" type="text" placeholder="검색어를 입력하세요"
           class="w-full bg-gray-100 border-0 rounded-full pl-9 pr-4 py-2 text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300 transition" />
       </div>
-      <div id="authArea" class="flex items-center gap-3 text-sm shrink-0"></div>
+      <!-- PC 인증 영역 -->
+      <div id="authArea" class="hidden md:flex items-center gap-3 text-sm shrink-0"></div>
+      <!-- 모바일 버튼 영역 -->
+      <div id="authAreaMobile" class="flex md:hidden items-center gap-2 text-sm shrink-0"></div>
+      <!-- 햄버거 메뉴 버튼 -->
+      <button id="menuBtn" class="md:hidden p-2 rounded-lg hover:bg-gray-100 transition shrink-0">
+        <svg class="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+        </svg>
+      </button>
     </div>
+    <!-- 햄버거 드롭다운 -->
+    <div id="mobileMenu" class="hidden md:hidden bg-white border-t border-gray-100 px-4 py-3 space-y-2 text-sm"></div>
   </header>
 
-  <main class="max-w-6xl mx-auto px-6 py-6 flex gap-6">
+  <main class="max-w-6xl mx-auto px-4 py-6 flex flex-col md:flex-row gap-6">
 
     <!-- 왼쪽: 게시글 목록 -->
     <div class="flex-1 min-w-0">
@@ -48,11 +61,21 @@
       </div>
     </div>
 
-    <!-- 오른쪽: 사이드바 -->
-    <aside class="w-64 shrink-0 space-y-4">
+    <!-- 오른쪽: 사이드바 (PC) / 탭 패널 (모바일) -->
+    <aside class="w-full md:w-64 md:shrink-0 space-y-4">
+
+      <!-- 모바일 탭 바 -->
+      <div class="flex md:hidden border-b border-gray-200 bg-white rounded-2xl overflow-hidden">
+        <button onclick="setTab('category')" data-tab="category"
+          class="tab-btn flex-1 py-2.5 text-sm font-semibold text-white bg-gray-900 transition">카테고리</button>
+        <button onclick="setTab('stats')" data-tab="stats"
+          class="tab-btn flex-1 py-2.5 text-sm font-medium text-gray-500 hover:bg-gray-50 transition">통계</button>
+        <button onclick="setTab('trending')" data-tab="trending"
+          class="tab-btn flex-1 py-2.5 text-sm font-medium text-gray-500 hover:bg-gray-50 transition">인기글</button>
+      </div>
 
       <!-- 커뮤니티 통계 -->
-      <div class="bg-gray-900 text-white rounded-2xl p-5">
+      <div id="panelStats" class="hidden md:block bg-gray-900 text-white rounded-2xl p-5">
         <h3 class="font-semibold text-sm mb-4">커뮤니티 통계</h3>
         <div class="space-y-3">
           <div class="flex justify-between items-center text-sm">
@@ -73,8 +96,8 @@
       </div>
 
       <!-- 카테고리 -->
-      <div class="bg-white rounded-2xl p-5 border border-gray-100">
-        <h3 class="font-semibold text-sm text-gray-800 mb-3">카테고리</h3>
+      <div id="panelCategory" class="bg-white rounded-2xl p-5 border border-gray-100">
+        <h3 class="font-semibold text-sm text-gray-800 mb-3 hidden md:block">카테고리</h3>
         <div class="space-y-1">
           <button onclick="setCategory('전체')" data-cat="전체"
             class="cat-btn w-full text-left px-3 py-2 rounded-xl text-sm font-semibold bg-gray-900 text-white transition">전체</button>
@@ -92,7 +115,7 @@
       </div>
 
       <!-- 인기 게시글 -->
-      <div class="bg-white rounded-2xl p-5 border border-gray-100">
+      <div id="panelTrending" class="hidden md:block bg-white rounded-2xl p-5 border border-gray-100">
         <h3 class="font-semibold text-sm text-gray-800 mb-3">🔥 인기 게시글</h3>
         <div id="trendingList" class="space-y-3"></div>
       </div>
@@ -104,28 +127,73 @@
     const token    = localStorage.getItem('token');
     const nickname = localStorage.getItem('nickname');
     const authArea = document.getElementById('authArea');
+    const authAreaMobile = document.getElementById('authAreaMobile');
+    const mobileMenu = document.getElementById('mobileMenu');
     let currentCategory = '전체';
     let currentSort     = 'latest';
     let searchTimer     = null;
 
     if (token) {
+      const isAdmin = localStorage.getItem('role') === 'admin';
+      // PC
       authArea.innerHTML = `
         <span class="text-gray-600"><strong class="text-gray-900">${nickname}</strong>님</span>
         <button onclick="logout()" class="text-gray-400 hover:text-red-500 transition text-xs">로그아웃</button>
-        ${localStorage.getItem('role') === 'admin' ? `<a href="/admin.html" class="text-xs text-purple-500 hover:text-purple-700 border border-purple-200 px-3 py-1.5 rounded-full transition">관리자</a>` : ''}
+        ${isAdmin ? `<a href="/admin.html" class="text-xs text-purple-500 hover:text-purple-700 border border-purple-200 px-3 py-1.5 rounded-full transition">관리자</a>` : ''}
         <a href="/write.html" class="bg-gray-900 hover:bg-gray-700 text-white text-sm font-semibold px-4 py-2 rounded-full transition">글쓰기</a>
+      `;
+      // 모바일: 글쓰기만 표시
+      authAreaMobile.innerHTML = `
+        <a href="/write.html" class="bg-gray-900 hover:bg-gray-700 text-white text-sm font-semibold px-3 py-1.5 rounded-full transition">글쓰기</a>
+      `;
+      // 햄버거 드롭다운
+      mobileMenu.innerHTML = `
+        <div class="text-gray-600 font-medium">${nickname}님</div>
+        ${isAdmin ? `<a href="/admin.html" class="block text-purple-500 py-1">관리자 페이지</a>` : ''}
+        <button onclick="logout()" class="block text-red-400 py-1 text-left w-full">로그아웃</button>
       `;
     } else {
       authArea.innerHTML = `
         <a href="/login.html" class="text-gray-600 hover:text-gray-900 transition">로그인</a>
         <a href="/signup.html" class="bg-gray-900 hover:bg-gray-700 text-white text-sm font-semibold px-4 py-2 rounded-full transition">회원가입</a>
       `;
+      authAreaMobile.innerHTML = `
+        <a href="/login.html" class="text-gray-600 text-sm">로그인</a>
+        <a href="/signup.html" class="bg-gray-900 text-white text-sm font-semibold px-3 py-1.5 rounded-full transition">회원가입</a>
+      `;
     }
+
+    // 햄버거 토글
+    document.getElementById('menuBtn').addEventListener('click', () => {
+      mobileMenu.classList.toggle('hidden');
+    });
 
     function logout() {
       localStorage.removeItem('token');
       localStorage.removeItem('nickname');
+      localStorage.removeItem('role');
       window.location.reload();
+    }
+
+    // 모바일 탭 전환
+    function setTab(tab) {
+      const panels = { category: 'panelCategory', stats: 'panelStats', trending: 'panelTrending' };
+      Object.entries(panels).forEach(([key, id]) => {
+        const el = document.getElementById(id);
+        if (key === tab) {
+          el.classList.remove('hidden');
+          el.classList.add('block');
+        } else {
+          el.classList.add('hidden');
+          el.classList.remove('block');
+        }
+      });
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        const active = btn.dataset.tab === tab;
+        btn.className = `tab-btn flex-1 py-2.5 text-sm transition ${
+          active ? 'font-semibold text-white bg-gray-900' : 'font-medium text-gray-500 hover:bg-gray-50'
+        }`;
+      });
     }
 
     function setCategory(cat) {

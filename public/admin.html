@@ -41,20 +41,22 @@
           <h2 class="font-semibold text-gray-900">전체 회원</h2>
           <span id="userCount" class="text-sm text-gray-400"></span>
         </div>
-        <table class="w-full text-sm">
-          <thead class="bg-gray-50 text-gray-500 text-xs uppercase">
-            <tr>
-              <th class="px-6 py-3 text-left">ID</th>
-              <th class="px-6 py-3 text-left">아이디</th>
-              <th class="px-6 py-3 text-left">닉네임</th>
-              <th class="px-6 py-3 text-left">권한</th>
-              <th class="px-6 py-3 text-left">게시글</th>
-              <th class="px-6 py-3 text-left">가입일</th>
-              <th class="px-6 py-3 text-left">관리</th>
-            </tr>
-          </thead>
-          <tbody id="userTable" class="divide-y divide-gray-50"></tbody>
-        </table>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead class="bg-gray-50 text-gray-500 text-xs uppercase">
+              <tr>
+                <th class="px-6 py-3 text-left">ID</th>
+                <th class="px-6 py-3 text-left">아이디</th>
+                <th class="px-6 py-3 text-left">닉네임</th>
+                <th class="px-6 py-3 text-left">권한</th>
+                <th class="px-6 py-3 text-left">게시글</th>
+                <th class="px-6 py-3 text-left">가입일</th>
+                <th class="px-6 py-3 text-left">관리</th>
+              </tr>
+            </thead>
+            <tbody id="userTable" class="divide-y divide-gray-50"></tbody>
+          </table>
+        </div>
       </div>
     </div>
 
@@ -65,20 +67,22 @@
           <h2 class="font-semibold text-gray-900">전체 게시글</h2>
           <span id="postCount" class="text-sm text-gray-400"></span>
         </div>
-        <table class="w-full text-sm">
-          <thead class="bg-gray-50 text-gray-500 text-xs uppercase">
-            <tr>
-              <th class="px-6 py-3 text-left">ID</th>
-              <th class="px-6 py-3 text-left">제목</th>
-              <th class="px-6 py-3 text-left">작성자</th>
-              <th class="px-6 py-3 text-left">카테고리</th>
-              <th class="px-6 py-3 text-left">조회수</th>
-              <th class="px-6 py-3 text-left">작성일</th>
-              <th class="px-6 py-3 text-left">관리</th>
-            </tr>
-          </thead>
-          <tbody id="postTable" class="divide-y divide-gray-50"></tbody>
-        </table>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead class="bg-gray-50 text-gray-500 text-xs uppercase">
+              <tr>
+                <th class="px-6 py-3 text-left">ID</th>
+                <th class="px-6 py-3 text-left">제목</th>
+                <th class="px-6 py-3 text-left">작성자</th>
+                <th class="px-6 py-3 text-left">카테고리</th>
+                <th class="px-6 py-3 text-left">조회수</th>
+                <th class="px-6 py-3 text-left">작성일</th>
+                <th class="px-6 py-3 text-left">관리</th>
+              </tr>
+            </thead>
+            <tbody id="postTable" class="divide-y divide-gray-50"></tbody>
+          </table>
+        </div>
       </div>
     </div>
 
