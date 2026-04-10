@@ -45,7 +45,8 @@ CREATE TABLE users (
   username   VARCHAR(50)  UNIQUE NOT NULL,
   password   VARCHAR(255) NOT NULL,
   nickname   VARCHAR(100) NOT NULL,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  role       VARCHAR(20)  NOT NULL DEFAULT 'user'  -- 'user' | 'admin'
 );
 
 CREATE TABLE posts (
@@ -54,17 +55,18 @@ CREATE TABLE posts (
   content     TEXT         NOT NULL,
   author_id   INT          NOT NULL,
   author_name VARCHAR(100) NOT NULL,
-  category    VARCHAR(50)  DEFAULT '자유게시판',
-  views       INT          DEFAULT 0,
+  category    VARCHAR(50)  NOT NULL DEFAULT '자유게시판',
+  views       INT          NOT NULL DEFAULT 0,
   created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (author_id) REFERENCES users(id)
+  FOREIGN KEY (author_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 CREATE TABLE likes (
   user_id INT NOT NULL,
   post_id INT NOT NULL,
   PRIMARY KEY (user_id, post_id),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
   FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE
 );
 
@@ -75,7 +77,8 @@ CREATE TABLE comments (
   author_name VARCHAR(100) NOT NULL,
   content     TEXT         NOT NULL,
   created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE
+  FOREIGN KEY (post_id)   REFERENCES posts(id)  ON DELETE CASCADE,
+  FOREIGN KEY (author_id) REFERENCES users(id)  ON DELETE CASCADE
 );
 ```
 
